@@ -1,4 +1,4 @@
-package com.usaa.wss;
+package com.ex.wss;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
