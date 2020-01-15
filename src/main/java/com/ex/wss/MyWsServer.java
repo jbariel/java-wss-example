@@ -1,4 +1,24 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.ex.wss;
+
+import java.net.InetSocketAddress;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -6,64 +26,62 @@ import org.java_websocket.server.WebSocketServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
-
 final class MyWsServer extends WebSocketServer {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private String currentTime = "1";
+	private String currentTime = "1";
 
-    private MyWsServer() {
-        super();
-    }
+	@SuppressWarnings("unused")
+	private MyWsServer() {
+		super();
+	}
 
-    MyWsServer(int port) {
-        this(new InetSocketAddress(port));
-    }
+	MyWsServer(int port) {
+		this(new InetSocketAddress(port));
+	}
 
-    MyWsServer(InetSocketAddress inetAddr) {
-        super(inetAddr);
-    }
+	MyWsServer(InetSocketAddress inetAddr) {
+		super(inetAddr);
+	}
 
+	@Override
+	public void onStart() {
+		log.debug("Started WSS...");
+		setConnectionLostTimeout(0);
+		setConnectionLostTimeout(100);
+	}
 
-    @Override
-    public void onStart() {
-        log.debug("Started WSS...");
-        setConnectionLostTimeout(0);
-        setConnectionLostTimeout(100);
-    }
+	@Override
+	public void onOpen(WebSocket conn, ClientHandshake handshake) {
+		conn.send(currentTime);
+		log.debug(conn + " has joined");
+	}
 
-    @Override
-    public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        conn.send(currentTime);
-        log.debug(conn + " has joined");
-    }
+	@Override
+	public void onClose(WebSocket conn, int code, String reason, boolean remote) {
+		broadcast(conn + " has left");
+	}
 
-    @Override
-    public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-        broadcast(conn + " has left");
-    }
+	@Override
+	public void onMessage(WebSocket conn, String msg) {
+		broadcast(msg);
+	}
 
-    @Override
-    public void onMessage(WebSocket conn, String msg) {
-        broadcast(msg);
-    }
+	@Override
+	public void onError(WebSocket conn, Exception e) {
+		e.printStackTrace();
+	}
 
-    @Override
-    public void onError(WebSocket conn, Exception e) {
-        e.printStackTrace();
-    }
+	@Override
+	public void broadcast(String text) {
+		log.trace("[BROADCAST] " + text);
+		super.broadcast(text);
+	}
 
-    @Override
-    public void broadcast(String text) {
-        log.trace("[BROADCAST] " + text);
-        super.broadcast(text);
-    }
-
-    public void updateTime() {
-        this.currentTime = String.valueOf(System.currentTimeMillis());
-        broadcast(this.currentTime);
-    }
+	public void updateTime() {
+		this.currentTime = String.valueOf(System.currentTimeMillis());
+		broadcast(this.currentTime);
+	}
 
 }
