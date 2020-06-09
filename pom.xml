@@ -14,6 +14,7 @@
         <dep.java-websocket.version>1.5.1</dep.java-websocket.version>
         <dep.junit.version>5.5.2</dep.junit.version>
         <dep.slf4j-simple.version>1.7.29</dep.slf4j-simple.version>
+        <dep.stringutils.version>3.10</dep.stringutils.version>
     </properties>
 
     <dependencyManagement>
@@ -40,7 +41,6 @@
 
         </dependency>
 
-
         <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -49,7 +49,12 @@
             <scope>test</scope>
         </dependency>
 
-
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${dep.stringutils.version}</version>
+        </dependency>
 
     </dependencies>
 

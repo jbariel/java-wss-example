@@ -30,6 +30,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,13 +39,30 @@ public class Entry {
 
 	private final static Logger log = LoggerFactory.getLogger(Entry.class);
 
-	public final static int WSS_PORT = 9001;
-
+	public static int WSS_PORT = 9001;
+	public static String WSS_HOST = null;
 	public static URI DEFAULT_URI = null;
+	public static boolean IS_CLIENT = false;
+	public static boolean IS_SERVER = false;
 
 	static {
 		try {
-			DEFAULT_URI = new URI("ws://localhost:" + Entry.WSS_PORT);
+			String svr = StringUtils.trimToNull(System.getenv("WSS_SERVER"));
+			if (null != svr) {
+				Entry.WSS_PORT = NumberUtils.toInt(svr, 9001);
+				Entry.IS_SERVER = true;
+			}
+
+			Entry.WSS_HOST = StringUtils.trimToNull(System.getenv("WSS_SERVER_HOST"));
+			if (null != WSS_HOST) {
+				Entry.WSS_PORT = NumberUtils.toInt(StringUtils.trimToNull(System.getenv("WSS_SERVER_PORT")),
+						Entry.WSS_PORT);
+				Entry.IS_CLIENT = true;
+			} else {
+				Entry.WSS_HOST = "localhost";
+			}
+
+			DEFAULT_URI = new URI("ws://" + Entry.WSS_HOST + ":" + Entry.WSS_PORT);
 		} catch (URISyntaxException e) {
 			log.error("Why could we not setup the correct default URI?!?!?");
 		}
@@ -53,13 +72,10 @@ public class Entry {
 
 	static class ConsumerThread extends Thread {
 
-		// private final int myThreadId;
-
 		private final MyWsClient client;
 
 		public ConsumerThread(final int threadId) {
 			super("Thread " + threadId);
-			// this.myThreadId = threadId;
 			log.info("Creating client " + threadId + "...");
 			client = new MyWsClient(threadId);
 		}
@@ -75,20 +91,41 @@ public class Entry {
 
 	}
 
+	static class WssWrapper {
+		static MyWsServer MY_WSS;
+
+		static void broadcast(String msg) {
+			if (null != WssWrapper.MY_WSS) {
+				WssWrapper.MY_WSS.broadcast(msg);
+			}
+		}
+
+		static void stop(int timeout) throws InterruptedException {
+			if (null != WssWrapper.MY_WSS) {
+				WssWrapper.MY_WSS.stop(timeout);
+			}
+		}
+	}
+
 	public static void main(String[] args) {
-		log.info("Time Publisher starting...");
+		if (Entry.IS_SERVER) {
+			log.info("Time Publisher starting...");
 
-		final MyWsServer publisher = new MyWsServer(WSS_PORT);
-		publisher.start();
+			final MyWsServer publisher = new MyWsServer(WSS_PORT);
+			publisher.start();
+			WssWrapper.MY_WSS = publisher;
 
-		log.debug("My WS Server started on port " + WSS_PORT);
+			log.debug("My WS Server started on port " + WSS_PORT);
 
-		log.info("Starting my publisher");
-		executor.scheduleAtFixedRate(() -> publisher.updateTime(), 1, 5, TimeUnit.SECONDS);
+			log.info("Starting my publisher");
+			executor.scheduleAtFixedRate(() -> publisher.updateTime(), 1, 5, TimeUnit.SECONDS);
+		}
 
-		List<ConsumerThread> threads = new ArrayList<>();
-		IntStream.range(0, 9).forEach(i -> threads.add(new ConsumerThread(i)));
-		threads.forEach(t -> t.start());
+		final List<ConsumerThread> threads = new ArrayList<>();
+		if (Entry.IS_CLIENT) {
+			IntStream.range(0, 9).forEach(i -> threads.add(new ConsumerThread(i)));
+			threads.forEach(t -> t.start());
+		}
 
 		log.info("Reading console...");
 		log.info("\tType 'exit' to quit");
@@ -97,9 +134,9 @@ public class Entry {
 		try (BufferedReader in = new BufferedReader(new InputStreamReader((System.in)))) {
 			while (true) {
 				String i = in.readLine();
-				publisher.broadcast(i);
+				WssWrapper.broadcast(i);
 				if ("exit".equalsIgnoreCase(i)) {
-					publisher.stop(1000);
+					WssWrapper.stop(1000);
 					break;
 				}
 			}
