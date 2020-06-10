@@ -118,10 +118,14 @@ public class Entry {
 			log.debug("My WS Server started on port " + WSS_PORT);
 
 			log.info("Starting my publisher");
-			executor.scheduleAtFixedRate(() -> publisher.updateTime(), 1, 5, TimeUnit.SECONDS);
+			executor.scheduleAtFixedRate(() -> {
+				log.info("Publishing time...");
+				publisher.updateTime();
+			}, 1, 5, TimeUnit.SECONDS);
 		}
 
 		final List<ConsumerThread> threads = new ArrayList<>();
+		threads.stream();
 		if (Entry.IS_CLIENT) {
 			IntStream.range(0, 9).forEach(i -> threads.add(new ConsumerThread(i)));
 			threads.forEach(t -> t.start());
