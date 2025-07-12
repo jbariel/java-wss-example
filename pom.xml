@@ -14,7 +14,7 @@
         <dep.java-websocket.version>1.5.1</dep.java-websocket.version>
         <dep.junit.version>5.5.2</dep.junit.version>
         <dep.slf4j-simple.version>1.7.29</dep.slf4j-simple.version>
-        <dep.stringutils.version>3.10</dep.stringutils.version>
+        <dep.stringutils.version>3.18.0</dep.stringutils.version>
     </properties>
 
     <dependencyManagement>
